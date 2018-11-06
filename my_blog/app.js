@@ -1,5 +1,6 @@
 const express = require('express')
 const app = express()
+const moment = require('moment')
 const bodyParser = require('body-parser')
 // 引入数据模版
 const mysql = require('mysql')
@@ -34,19 +35,28 @@ app.get('/login',(req,res)=>{
 })
 // 完成注册业务模版
 app.post('/register',(req,res)=>{
+
     const body = req.body
     // console.log(body)
     if(body.username.trim().length <=0 || body.password.trim().length <=0 || body.nickname.trim().length <=0){
         return res.send({msg:'请填写完整的表单数据在注册用户',status:501})
     }
     // 查询是否重复
-    const sql = 'select count(*) as count from blog_users where username = ?'
-    conn.query(sql,body.username,(err,result)=>{
+    const sql1 = 'select count(*) as count from blog_user where username = ?'
+    conn.query(sql1,body.username,(err,result)=>{
         if(err) return res.send({msg:'用户名查重失败',status:502})
-        console.log(result)
+       if(result[0].count !==0) return res.send({msg:'请更换其他用户名再重新注册',status:503})
+    //    执行注册事件
+    body.ctime = moment().format('YYY-MM-DD HH:mm:ss')
+    const sql2 = 'insert into blog_user set ?'
+    conn.query(sql2,body,(err,result)=>{
+        if(err) return res.send({msg:'注册新用户失败!',status:504})
+        if(result.affectedRows !== 1) return res.send({msg:'注册新用户失败', status:505})
+        res.send({msg:'注册新用户成功',status:200})
     })
-    res.send({msg:'ok',status:200})
+    })
+   
 })
-app.listen(80,()=>{
-    console.log('http://127.0.0.1')
+app.listen(5001,()=>{
+    console.log('http://127.0.0.1:5001')
 })
